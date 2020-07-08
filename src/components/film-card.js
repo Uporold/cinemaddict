@@ -1,4 +1,5 @@
 import AbstractComponent from "./abstract-component";
+import moment from "moment";
 
 const getSlicedDescription = (description, length) => {
   if (description.length > length) {
@@ -17,8 +18,8 @@ const createFilmCardTemplate = (movie) => {
         <h3 class="film-card__title">${title}</h3>
          <p class="film-card__rating">${rating}</p>
         <p class="film-card__info">
-          <span class="film-card__year">${release}</span>
-          <span class="film-card__duration">${runtime}</span>
+          <span class="film-card__year">${moment(release).format(`DD MMMM YYYY`)}</span>
+          <span class="film-card__duration">${moment.utc(moment.duration(runtime, `minutes`).asMilliseconds()).format(`H[h] mm[m]`)}</span>
           <span class="film-card__genre">${genres.join(`, `)}</span>
         </p>
         <img src="./${poster}" alt="" class="film-card__poster">

@@ -1,6 +1,7 @@
 import AbstractSmartComponent from "./abstract-smart-component";
 import NewComment from "./new-comment";
 import {render} from "../utils/render";
+import moment from "moment";
 
 const createGenresMarkup = (genre) => {
   return (
@@ -18,7 +19,7 @@ const createCommentMarkup = ({id, author, comment, date, emotion}) => {
   <p class="film-details__comment-text">${comment}</p>
 <p class="film-details__comment-info">
   <span class="film-details__comment-author">${author}</span>
-<span class="film-details__comment-day">${date}</span>
+<span class="film-details__comment-day">${moment(date).format(`YYYY/MM/DD HH:mm`)}</span>
 <button class="film-details__comment-delete">Delete</button>
   </p>
   </div>
