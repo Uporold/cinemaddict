@@ -63,13 +63,13 @@ const createFilmDetailsPopupTemplate = (movie, movieComments) => {
   };
 
   const createControlsMarkup = () => {
-    let arrTest = [];
+    let popupControlsMarkup = [];
     for (let list in FilmControlItem) {
       if ({}.hasOwnProperty.call(FilmControlItem, list)) {
-        arrTest.push(createControlMarkup(FilmControlItem[list].NAME, FilmControlItem[list].TEXT, isChecked(FilmControlItem[list].STATUS_NAME)));
+        popupControlsMarkup.push(createControlMarkup(FilmControlItem[list].NAME, FilmControlItem[list].TEXT, isChecked(FilmControlItem[list].STATUS_NAME)));
       }
     }
-    return arrTest.join(`\n`);
+    return popupControlsMarkup.join(`\n`);
   };
 
   return (

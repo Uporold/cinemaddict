@@ -9,6 +9,11 @@ const Selectors = {
   FAVORITE: `isInFavorites`
 };
 
+export const Mode = {
+  DEFAULT: `default`,
+  DETAILS: `details`,
+};
+
 export default class MovieController {
   constructor(container, onDataChange) {
     this._container = container;
@@ -33,59 +38,34 @@ export default class MovieController {
 
     this._filmDetailsPopupComponent.setClosePopupHandler(() => {
       this._removeFilmDetails();
+      this._onDataChange(movie, movie);
       document.removeEventListener(`keydown`, this._onEscKeyDown);
     });
 
     this._filmCardComponent.setWatchlistButtonHandler((evt) => {
-      /* evt.preventDefault();
-      const newData = Movie.clone(movie);
-      newData.isInWatchlist = !movie.isInWatchlist;
-      this._onDataChange(movie, newData);*/
       this._getHandlerTemplate(evt, movie, Selectors.WATCHLIST);
     });
 
     this._filmCardComponent.setHistoryButtonHandler((evt) => {
-      /* evt.preventDefault();
-      const newData = Movie.clone(movie);
-      newData.isInHistory = !movie.isInHistory;
-      this._onDataChange(movie, newData);*/
       this._getHandlerTemplate(evt, movie, Selectors.HISTORY);
     });
 
     this._filmCardComponent.setFavoriteButtonHandler((evt) => {
-      /* evt.preventDefault();
-      const newData = Movie.clone(movie);
-      newData.isInFavorites = !movie.isInFavorites;
-      this._onDataChange(movie, newData);*/
       this._getHandlerTemplate(evt, movie, Selectors.FAVORITE);
     });
 
     this._filmDetailsPopupComponent.setWatchlistButtonHandler((evt) => {
-      /* evt.preventDefault();
-      const newData = Movie.clone(movie);
-      newData.isInWatchlist = !movie.isInWatchlist;
-      this._onDataChange(movie, newData);*/
-      this._getHandlerTemplate(evt, movie, Selectors.WATCHLIST);
+      this._getHandlerTemplate(evt, movie, Selectors.WATCHLIST, Mode.DETAILS);
     });
 
     this._filmDetailsPopupComponent.setHistoryButtonHandler((evt) => {
-      /* evt.preventDefault();
-      const newData = Movie.clone(movie);
-      newData.isInHistory = !movie.isInHistory;
-      this._onDataChange(movie, newData);*/
-      this._getHandlerTemplate(evt, movie, Selectors.HISTORY);
+      this._getHandlerTemplate(evt, movie, Selectors.HISTORY, Mode.DETAILS);
     });
 
     this._filmDetailsPopupComponent.setFavoriteButtonHandler((evt) => {
-      /* evt.preventDefault();
-      const newData = Movie.clone(movie);
-      newData.isInFavorites = !movie.isInFavorites;
-      this._onDataChange(movie, newData);*/
-      this._getHandlerTemplate(evt, movie, Selectors.FAVORITE);
+      this._getHandlerTemplate(evt, movie, Selectors.FAVORITE, Mode.DETAILS);
     });
 
-
-    // render(this._container, this._filmCardComponent);
     if (oldFilmCardComponent && oldFilmDetailsPopupComponent) {
       replace(this._filmCardComponent, oldFilmCardComponent);
       replace(this._filmDetailsPopupComponent, oldFilmDetailsPopupComponent);
@@ -100,11 +80,11 @@ export default class MovieController {
     document.removeEventListener(`keydown`, this._onEscKeyDown);
   }
 
-  _getHandlerTemplate(evt, movie, data) {
+  _getHandlerTemplate(evt, movie, data, mode) {
     evt.preventDefault();
     const newData = Movie.clone(movie);
     newData[data] = !movie[data];
-    this._onDataChange(movie, newData);
+    this._onDataChange(movie, newData, mode);
   }
 
   _showFilmDetails() {
