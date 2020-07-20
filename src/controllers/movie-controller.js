@@ -3,6 +3,9 @@ import FilmCardComponent from "../components/film-card";
 import {render, replace, remove} from "../utils/render";
 import Movie from "../models/movie";
 
+const SHAKE_ANIMATION_TIMEOUT = 600;
+const SHAKE_STYLE = `box-shadow: 0px 0px 15px 0px rgba(245,32,32,1);`;
+
 const Selectors = {
   WATCHLIST: `isInWatchlist`,
   HISTORY: `isInHistory`,
@@ -96,6 +99,8 @@ export default class MovieController {
           this._commentsModel.addComment(newComments[newComments.length - 1]);
           this._onDataChange(oldData, newMovie, Mode.DETAILS);
         });
+    } else {
+      this.shake();
     }
   }
 
@@ -114,6 +119,15 @@ export default class MovieController {
     remove(this._filmCardComponent);
     remove(this._filmDetailsPopupComponent);
     document.removeEventListener(`keydown`, this._onEscKeyDown);
+  }
+
+  shake() {
+    this._filmDetailsPopupComponent.getElement().querySelector(`.film-details__comment-label`).style = SHAKE_STYLE;
+    this._filmDetailsPopupComponent.getElement().querySelector(`.film-details__comment-label`).style.animation = `shake ${SHAKE_ANIMATION_TIMEOUT / 1000}s`;
+    setTimeout(() => {
+      this._filmDetailsPopupComponent.getElement().querySelector(`.film-details__comment-label`).style = ``;
+      this._filmDetailsPopupComponent.getElement().querySelector(`.film-details__comment-label`).style.animation = ``;
+    }, SHAKE_ANIMATION_TIMEOUT);
   }
 
   _getHandlerTemplate(evt, movie, data, mode) {

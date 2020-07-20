@@ -234,6 +234,8 @@ export default class FilmDetailsPopup extends AbstractSmartComponent {
     deleteButtons.addEventListener(`click`, (evt) => {
       evt.preventDefault();
       let target = evt.target;
+      target.disabled = true;
+      target.textContent = `Deleting...`;
       let id = target.dataset.deleteId;
       if (target.tagName !== `BUTTON`) {
         return;
