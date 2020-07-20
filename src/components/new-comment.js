@@ -1,6 +1,6 @@
 import AbstractSmartComponent from "./abstract-smart-component";
 
-const createNewComment = (emoji) => {
+const createNewComment = (emoji, comment) => {
   return (
     `<div class="film-details__new-comment">
           <div class="film-details__add-emoji-label">
@@ -8,7 +8,7 @@ const createNewComment = (emoji) => {
           </div>
 
           <label class="film-details__comment-label">
-            <textarea class="film-details__comment-input" placeholder="Select reaction below and write comment here" name="comment"></textarea>
+            <textarea class="film-details__comment-input" placeholder="Select reaction below and write comment here" name="comment">${comment ? comment : ``}</textarea>
           </label>
 
           <div class="film-details__emoji-list">
@@ -41,25 +41,59 @@ export default class NewComment extends AbstractSmartComponent {
   constructor() {
     super();
     this._emoji = null;
+    this._comment = null;
 
     this._subscribeOnEvents();
   }
   getTemplate() {
-    return createNewComment(this._emoji);
+    return createNewComment(this._emoji, this._comment);
   }
 
   _subscribeOnEvents() {
     const element = this.getElement();
-    element.querySelectorAll(`.film-details__emoji-item`).forEach((input) =>{
-      input.addEventListener(`click`, (evt) => {
-        this._emoji = evt.target.value;
-        this.rerender();
-      });
+    let emojiList = element.querySelector(`.film-details__emoji-list`);
+    emojiList.addEventListener(`click`, (evt) => {
+      let target = evt.target;
+      this._emoji = target.value;
+      if (target.tagName !== `INPUT`) {
+        return;
+      }
+      this.rerender();
     });
+
+    const commentInput = element.querySelector(`.film-details__comment-input`);
+    commentInput.addEventListener(`input`, () => {
+      this._comment = commentInput.value;
+    });
+  }
+
+  rerender() {
+    super.rerender();
   }
 
   recoveryListeners() {
     this._subscribeOnEvents();
+  }
+
+  getNewComment() {
+    const emotion = this._emoji;
+    const newComment = this._comment;
+
+    if (!emotion || !newComment) {
+      return null;
+    } else {
+      return {
+        comment: newComment,
+        emotion,
+        date: new Date()
+      };
+    }
+  }
+
+  reset() {
+    this._emoji = null;
+    this._comment = null;
+    this.rerender();
   }
 
 }

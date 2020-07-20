@@ -15,12 +15,14 @@ export const Mode = {
 };
 
 export default class MovieController {
-  constructor(container, onDataChange) {
+  constructor(container, onDataChange, api, commentsModel) {
     this._container = container;
     this._onDataChange = onDataChange;
     this._filmCardComponent = null;
     this._filmDetailsPopupComponent = null;
     this._body = document.querySelector(`body`);
+    this._api = api;
+    this._commentsModel = commentsModel;
 
     this._onEscKeyDown = this._onEscKeyDown.bind(this);
   }
@@ -38,7 +40,6 @@ export default class MovieController {
 
     this._filmDetailsPopupComponent.setClosePopupHandler(() => {
       this._removeFilmDetails();
-      this._onDataChange(movie, movie);
       document.removeEventListener(`keydown`, this._onEscKeyDown);
     });
 
@@ -66,12 +67,47 @@ export default class MovieController {
       this._getHandlerTemplate(evt, movie, Selectors.FAVORITE, Mode.DETAILS);
     });
 
+    this._filmDetailsPopupComponent.setCommentDeleteButtonClickHandler((id) => {
+      this._onCommentDataChange(movie, id);
+    });
+
+    this._filmDetailsPopupComponent.setAddNewCommentHandler(() => {
+      this._onCommentDataChange(movie);
+    });
+
     if (oldFilmCardComponent && oldFilmDetailsPopupComponent) {
       replace(this._filmCardComponent, oldFilmCardComponent);
       replace(this._filmDetailsPopupComponent, oldFilmDetailsPopupComponent);
     } else {
       render(this._container, this._filmCardComponent);
     }
+  }
+
+  _onCommentDataChange(oldData, id = false) {
+    return id === false ? this._placeComment(oldData) : this._deleteComment(oldData, id);
+  }
+
+
+  _placeComment(oldData) {
+    const comment = this._filmDetailsPopupComponent.getNewComment();
+    if (comment) {
+      this._api.createComment(oldData.id, comment)
+        .then(({newMovie, newComments}) => {
+          this._commentsModel.addComment(newComments[newComments.length - 1]);
+          this._onDataChange(oldData, newMovie, Mode.DETAILS);
+        });
+    }
+  }
+
+  _deleteComment(oldData, id) {
+    const newMovie = Movie.clone(oldData);
+    this._api.deleteComment(id)
+       .then(() => {
+         newMovie.commentIds = oldData.commentIds.filter((tid) => {
+           return tid !== id;
+         });
+         this._onDataChange(oldData, newMovie, Mode.DETAILS);
+       });
   }
 
   destroy() {
@@ -90,12 +126,12 @@ export default class MovieController {
   _showFilmDetails() {
     this._body.appendChild(this._filmDetailsPopupComponent.getElement());
     this._body.classList.toggle(`hide-overflow`);
-    this._filmDetailsPopupComponent.recoveryListeners();
   }
 
   _removeFilmDetails() {
     this._body.removeChild(this._filmDetailsPopupComponent.getElement());
     this._body.classList.toggle(`hide-overflow`);
+    this._filmDetailsPopupComponent.reset();
   }
 
   _onEscKeyDown(evt) {

@@ -40,6 +40,12 @@ export default class API {
     }));
   }
 
+  getMovieComments(movie) {
+    return this._load({url: `comments/${movie.id}`})
+        .then((response) => response.json())
+        .then(Comment.parseComments);
+  }
+
 
   _load({url, method = Method.GET, body = null, headers = new Headers()}) {
     headers.append(`Authorization`, this._authorization);
@@ -60,6 +66,28 @@ export default class API {
     })
       .then((response) => response.json())
       .then(Movie.parseMovie);
+  }
+
+  deleteComment(id) {
+    return this._load({
+      url: `comments/${id}`,
+      method: Method.DELETE
+    });
+  }
+
+  createComment(filmId, comment) {
+    return this._load({
+      url: `comments/${filmId}`,
+      method: Method.POST,
+      body: JSON.stringify(comment),
+      headers: new Headers({"Content-Type": `application/json`}),
+    })
+      .then((response) => response.json())
+      .then((comments) => {
+        const newMovie = Movie.parseMovie(comments[`movie`]);
+        const newComments = Comment.parseComments(comments[`comments`]);
+        return {newMovie, newComments};
+      });
   }
 
 }

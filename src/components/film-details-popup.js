@@ -1,5 +1,6 @@
 import AbstractSmartComponent from "./abstract-smart-component";
 import NewComment from "./new-comment";
+import {getDate} from "../utils/utils";
 import {render} from "../utils/render";
 import moment from "moment";
 
@@ -19,8 +20,8 @@ const createCommentMarkup = ({id, author, comment, date, emotion}) => {
   <p class="film-details__comment-text">${comment}</p>
 <p class="film-details__comment-info">
   <span class="film-details__comment-author">${author}</span>
-<span class="film-details__comment-day">${moment(date).format(`YYYY/MM/DD HH:mm`)}</span>
-<button class="film-details__comment-delete">Delete</button>
+<span class="film-details__comment-day">${moment(date).fromNow()}</span>
+<button class="film-details__comment-delete" data-delete-id="${id}">Delete</button>
   </p>
   </div>
   </li>`
@@ -56,7 +57,8 @@ const createControlMarkup = (name, text, status) => {
 const createFilmDetailsPopupTemplate = (movie, movieComments) => {
   const {title, original, age, rating, director, writers, actors, release, runtime, country, genres, poster, description, commentIds} = movie;
   const genresMarkup = genres.map((genre) => createGenresMarkup(genre)).join(`\n`);
-  const commentsMarkup = movieComments.map((comment) => createCommentMarkup(comment)).join(`\n`);
+  const sortedByDateComments = movieComments.sort((a, b) => getDate(b.date) - getDate(a.date));
+  const commentsMarkup = sortedByDateComments.map((comment) => createCommentMarkup(comment)).join(`\n`);
 
   const isChecked = (button) => {
     return movie[button] ? `checked` : ``;
@@ -113,11 +115,11 @@ const createFilmDetailsPopupTemplate = (movie, movieComments) => {
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Release Date</td>
-              <td class="film-details__cell">${release}</td>
+              <td class="film-details__cell">${moment(release).format(`DD MMM YYYY`)}</td>
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Runtime</td>
-              <td class="film-details__cell">${runtime}</td>
+              <td class="film-details__cell">${moment.utc(moment.duration(runtime, `minutes`).asMilliseconds()).format(`H[h] mm[m]`)}</td>
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Country</td>
@@ -194,13 +196,14 @@ export default class FilmDetailsPopup extends AbstractSmartComponent {
     super();
     this._movie = movie;
     this._comments = comments;
-    this._kekan = new NewComment();
-    render(this.getElement().querySelector(`.test`), this._kekan);
+    this._newCommentTestComponent = new NewComment();
+    render(this.getElement().querySelector(`.test`), this._newCommentTestComponent);
 
     this._watchlistHandler = null;
     this._historyHandler = null;
     this._favoriteHandler = null;
-
+    this._deleteButtonClickHandler = null;
+    this._addNewCommentHandler = null;
   }
 
   getTemplate() {
@@ -226,10 +229,41 @@ export default class FilmDetailsPopup extends AbstractSmartComponent {
     this._favoriteHandler = handler;
   }
 
+  setCommentDeleteButtonClickHandler(handler) {
+    let deleteButtons = this.getElement().querySelector(`.film-details__comments-list`);
+    deleteButtons.addEventListener(`click`, (evt) => {
+      evt.preventDefault();
+      let target = evt.target;
+      let id = target.dataset.deleteId;
+      if (target.tagName !== `BUTTON`) {
+        return;
+      }
+      this._deleteButtonClickHandler = handler(id);
+    });
+  }
+
+  setAddNewCommentHandler(handler) {
+    this.getElement().addEventListener(`keydown`, (evt) => {
+      if (evt.code === `Enter` && (evt.ctrlKey || evt.metaKey)) {
+        this._addNewCommentHandler = handler();
+      }
+    });
+  }
+
+  getNewComment() {
+    return this._newCommentTestComponent.getNewComment();
+  }
+
+  reset() {
+    this._newCommentTestComponent.reset();
+  }
+
   recoveryListeners() {
     this.setWatchlistButtonHandler(this._watchlistHandler);
     this.setHistoryButtonHandler(this._historyHandler);
     this.setFavoriteButtonHandler(this._favoriteHandler);
+    this.setCommentDeleteButtonClickHandler(this._deleteButtonClickHandler);
+    this.setAddNewCommentHandler(this._addNewCommentHandler);
   }
 }
 

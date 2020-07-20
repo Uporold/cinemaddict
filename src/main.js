@@ -8,7 +8,7 @@ import API from "./api/api.js";
 
 import {render} from "./utils/render";
 
-const AUTHORIZATION = `Basic fdsffwerewrwewbvcb1337`;
+const AUTHORIZATION = `Basic 10545fdsffwerewrwewbvcb1337`;
 const END_POINT = `https://11.ecmascript.pages.academy/cinemaddict/`;
 
 const api = new API(END_POINT, AUTHORIZATION);

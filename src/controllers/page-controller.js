@@ -1,4 +1,5 @@
 import {remove, render} from "../utils/render";
+import {getDate} from "../utils/utils";
 import SortingComponent, {SortType} from "../components/sorting";
 import FilmsComponent from "../components/films";
 import FilmsListComponent from "../components/films-list";
@@ -37,22 +38,22 @@ const getMovieComments = (movie, comments) => {
   });
 };
 
-const renderFilms = (container, movies, comments, onDataChange) => {
+const renderFilms = (container, movies, comments, onDataChange, api, commentsModel) => {
   let controllers = [];
   movies.map((movie) => {
-    const movieController = new MovieController(container, onDataChange);
+    const movieController = new MovieController(container, onDataChange, api, commentsModel);
     movieController.render(movie, getMovieComments(movie, comments));
     controllers = [...controllers, movieController];
   });
   return controllers;
 };
 
-const renderExtraFilms = (title, movies, comments, filmsComponent, onDataChange) => {
+const renderExtraFilms = (title, movies, comments, filmsComponent, onDataChange, api, commentsModel) => {
   const filmListExtraComponent = new FilmsListExtraComponent(title);
 
   render(filmsComponent.getElement(), filmListExtraComponent);
   const filmsListContainerExtra = filmListExtraComponent.getElement().querySelector(`.films-list__container`);
-  return renderFilms(filmsListContainerExtra, movies, comments, onDataChange);
+  return renderFilms(filmsListContainerExtra, movies, comments, onDataChange, api, commentsModel);
 };
 
 const getSortedMovies = (movies, sortType, from, to) => {
@@ -73,16 +74,10 @@ const getSortedMovies = (movies, sortType, from, to) => {
   return showingMovies.slice(from, to);
 };
 
-const getDate = (date) => {
-  return new Date(date).valueOf();
-};
-
-
 export default class PageController {
   constructor(container, moviesModel, commentsModel, api) {
     this._container = container;
     this._api = api;
-    this._comments = [];
     this._moviesModel = moviesModel;
     this._commentsModel = commentsModel;
     this._showingFilmsCount = SHOWING_FILMS_COUNT_ON_START;
@@ -108,7 +103,6 @@ export default class PageController {
 
   render() {
     const movies = this._moviesModel.getMovies();
-    this._comments = this._commentsModel.getComments();
     this._mainMenuComponent.render();
     render(this._container, this._sortingComponent);
     render(this._container, this._filmsComponent);
@@ -120,7 +114,7 @@ export default class PageController {
 
     render(this._filmsComponent.getElement(), this._filmsListComponent);
 
-    const newMovies = renderFilms(this._filmsListContainer, movies.slice(0, this._showingFilmsCount), this._comments, this._onDataChange);
+    const newMovies = renderFilms(this._filmsListContainer, movies.slice(0, this._showingFilmsCount), this._commentsModel.getComments(), this._onDataChange, this._api, this._commentsModel);
     this._showedMovieControllers = this._showedMovieControllers.concat(newMovies);
     this._renderLoadMoreButton();
     this._renderExtraFilms();
@@ -129,7 +123,7 @@ export default class PageController {
   _renderExtraFilms() {
     for (let list in Extra) {
       if ({}.hasOwnProperty.call(Extra, list)) {
-        const newMovies = renderExtraFilms(Extra[list].title, Extra[list].getExtraMovies(this._moviesModel.getMoviesAll()).slice(0, Extra[list].count), this._comments, this._filmsComponent, this._onDataChange);
+        const newMovies = renderExtraFilms(Extra[list].title, Extra[list].getExtraMovies(this._moviesModel.getMoviesAll()).slice(0, Extra[list].count), this._commentsModel.getComments(), this._filmsComponent, this._onDataChange, this._api, this._commentsModel);
         this._showedExtraMovieControllers = this._showedExtraMovieControllers.concat(newMovies);
       }
     }
@@ -146,7 +140,7 @@ export default class PageController {
       this._showingFilmsCount = this._showingFilmsCount + SHOWING_FILMS_COUNT_BY_BUTTON;
       const sort = this._sortingComponent.getSortType();
       const sortedMovies = getSortedMovies(this._moviesModel.getMovies(), sort, prevFilmsCount, this._showingFilmsCount);
-      const newMovies = renderFilms(this._filmsListContainer, sortedMovies, this._comments, this._onDataChange);
+      const newMovies = renderFilms(this._filmsListContainer, sortedMovies, this._commentsModel.getComments(), this._onDataChange, this._api, this._commentsModel);
       this._showedMovieControllers = this._showedMovieControllers.concat(newMovies);
 
       if (this._showingFilmsCount >= this._moviesModel.getMovies().length) {
@@ -158,7 +152,7 @@ export default class PageController {
   _onSortTypeChange(sortType) {
     const sortedMovies = getSortedMovies(this._moviesModel.getMovies(), sortType, 0, this._showingFilmsCount);
     this._removeMovies();
-    this._showedMovieControllers = renderFilms(this._filmsListContainer, sortedMovies, this._comments, this._onDataChange);
+    this._showedMovieControllers = renderFilms(this._filmsListContainer, sortedMovies, this._commentsModel.getComments(), this._onDataChange, this._api, this._commentsModel);
   }
 
   _removeMovies() {
@@ -166,8 +160,19 @@ export default class PageController {
     this._showedMovieControllers = [];
   }
 
+  _removeExtraMovies() {
+    this._showedExtraMovieControllers.forEach((eventController) => eventController.destroy());
+    this._showedExtraMovieControllers = [];
+  }
+
   _updateMovies() {
+    this._filmsListContainer.innerHTML = ``;
+    document.querySelectorAll(`.films-list--extra`).forEach((list) => {
+      list.innerHTML = ``;
+    });
+    this._removeExtraMovies();
     this._onSortTypeChange(this._sortingComponent.getSortType());
+    this._renderExtraFilms();
     remove(this._showMoreButtonComponent);
     this._renderLoadMoreButton();
   }
@@ -181,7 +186,7 @@ export default class PageController {
         const isSuccess = this._moviesModel.updateMovie(oldData.id, movie);
         if (isSuccess) {
           movieControllers.forEach((movieController) => {
-            movieController.render(movie, getMovieComments(movie, this._comments));
+            movieController.render(movie, getMovieComments(movie, this._commentsModel.getComments()));
           });
           if (mode === Mode.DEFAULT) {
             this._updateMovies();
