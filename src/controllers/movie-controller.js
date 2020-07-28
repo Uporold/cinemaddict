@@ -18,14 +18,16 @@ export const Mode = {
 };
 
 export default class MovieController {
-  constructor(container, onDataChange, api, commentsModel) {
+  constructor(container, onDataChange, onViewChange, api, commentsModel) {
     this._container = container;
     this._onDataChange = onDataChange;
+    this._onViewChange = onViewChange;
     this._filmCardComponent = null;
     this._filmDetailsPopupComponent = null;
     this._body = document.querySelector(`body`);
     this._api = api;
     this._commentsModel = commentsModel;
+    this._mode = Mode.DEFAULT;
 
     this._onEscKeyDown = this._onEscKeyDown.bind(this);
   }
@@ -144,14 +146,19 @@ export default class MovieController {
   }
 
   _showFilmDetails() {
+    this._onViewChange();
+    this._mode = Mode.DETAILS;
     this._body.appendChild(this._filmDetailsPopupComponent.getElement());
     this._body.classList.toggle(`hide-overflow`);
   }
 
   _removeFilmDetails() {
-    this._body.removeChild(this._filmDetailsPopupComponent.getElement());
-    this._body.classList.toggle(`hide-overflow`);
-    this._filmDetailsPopupComponent.reset();
+    if (this._mode === Mode.DETAILS) {
+      this._body.removeChild(this._filmDetailsPopupComponent.getElement());
+      this._body.classList.toggle(`hide-overflow`);
+      this._filmDetailsPopupComponent.reset();
+      this._mode = Mode.DEFAULT;
+    }
   }
 
   _onEscKeyDown(evt) {
@@ -160,6 +167,12 @@ export default class MovieController {
     if (isEscKey) {
       this._removeFilmDetails();
       document.removeEventListener(`keydown`, this._onEscKeyDown);
+    }
+  }
+
+  setDefaultView() {
+    if (this._mode === Mode.DETAILS) {
+      this._removeFilmDetails();
     }
   }
 }
