@@ -59,15 +59,15 @@ export default class MovieController {
     });
 
     this._filmDetailsPopupComponent.setWatchlistButtonHandler((evt) => {
-      this._getHandlerTemplate(evt, movie, Selectors.WATCHLIST, Mode.DETAILS);
+      this._getHandlerTemplate(evt, movie, Selectors.WATCHLIST);
     });
 
     this._filmDetailsPopupComponent.setHistoryButtonHandler((evt) => {
-      this._getHandlerTemplate(evt, movie, Selectors.HISTORY, Mode.DETAILS);
+      this._getHandlerTemplate(evt, movie, Selectors.HISTORY);
     });
 
     this._filmDetailsPopupComponent.setFavoriteButtonHandler((evt) => {
-      this._getHandlerTemplate(evt, movie, Selectors.FAVORITE, Mode.DETAILS);
+      this._getHandlerTemplate(evt, movie, Selectors.FAVORITE);
     });
 
     this._filmDetailsPopupComponent.setCommentDeleteButtonClickHandler((id) => {
@@ -97,7 +97,7 @@ export default class MovieController {
       this._api.createComment(oldData.id, comment)
         .then(({newMovie, newComments}) => {
           this._commentsModel.addComment(newComments[newComments.length - 1]);
-          this._onDataChange(oldData, newMovie, Mode.DETAILS);
+          this._onDataChange(oldData, newMovie);
         });
     } else {
       this.shake();
@@ -108,10 +108,11 @@ export default class MovieController {
     const newMovie = Movie.clone(oldData);
     this._api.deleteComment(id)
        .then(() => {
+         this._commentsModel.removeComment(id);
          newMovie.commentIds = oldData.commentIds.filter((tid) => {
            return tid !== id;
          });
-         this._onDataChange(oldData, newMovie, Mode.DETAILS);
+         this._onDataChange(oldData, newMovie);
        });
   }
 
@@ -134,6 +135,11 @@ export default class MovieController {
     evt.preventDefault();
     const newData = Movie.clone(movie);
     newData[data] = !movie[data];
+    if (data === Selectors.HISTORY && newData[data] === false) {
+      newData.watchingDate = null;
+    } else {
+      newData.watchingDate = new Date();
+    }
     this._onDataChange(movie, newData, mode);
   }
 

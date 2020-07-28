@@ -1,6 +1,7 @@
 import AbstractComponent from "./abstract-component";
 import {SortType} from "./sorting";
 import {FilterType} from "../utils/const";
+import {MenuItem} from "../main";
 
 const Selectors = {
   WATCHLIST: `isInWatchlist`,
@@ -21,7 +22,7 @@ const createMainMenuTemplate = (movies) => {
           <a href="#history" data-filter-type="${FilterType.HISTORY}" class="main-navigation__item">History <span class="main-navigation__item-count">${getFilterItemCount(Selectors.HISTORY)}</span></a>
           <a href="#favorites" data-filter-type="${FilterType.FAVORITES}" class="main-navigation__item">Favorites <span class="main-navigation__item-count">${getFilterItemCount(Selectors.FAVORITE)}</span></a>
         </div>
-        <a href="#stats" class="main-navigation__additional">Stats</a>
+        <a href="#stats" data-filter-type="${MenuItem.STATS}" class="main-navigation__additional">Stats</a>
      </nav>`
   );
 };
@@ -38,7 +39,7 @@ export default class MainMenu extends AbstractComponent {
   }
 
   _removeAllActiveItems() {
-    const filterButtons = this.getElement().querySelectorAll(`.main-navigation__item`);
+    const filterButtons = this.getElement().getElementsByTagName(`a`);
     for (let filterButton of filterButtons) {
       if (filterButton.classList.contains(`main-navigation__item--active`)) {
         filterButton.classList.remove(`main-navigation__item--active`);
@@ -69,7 +70,9 @@ export default class MainMenu extends AbstractComponent {
       this._currenFilterType = filterType;
 
       handler(this._currenFilterType);
+
     });
   }
+
 }
 

@@ -1,6 +1,7 @@
 import MainMenu from "../components/main-menu";
 import {replace, render} from "../utils/render";
 import {FilterType} from "../utils/const";
+import {MenuItem} from "../main";
 
 export default class FilterController {
   constructor(container, moviesModel) {
@@ -21,14 +22,21 @@ export default class FilterController {
 
     const oldComponent = this._filterComponent;
 
-    this._filterComponent = new MainMenu(movies, this._activeFilterType);
+    this._filterComponent = new MainMenu(movies);
     this._filterComponent.setFilterChangeHandler(this._onFilterChange);
+
 
     if (oldComponent) {
       replace(this._filterComponent, oldComponent);
+      this.setOnStatsClick(this._onStatsClick);
     } else {
       render(this._container, this._filterComponent);
     }
+  }
+
+  setOnStatsClick(handler) {
+    handler(this._activeFilterType);
+    this._onStatsClick = handler;
   }
 
   _onDataChange() {
@@ -37,30 +45,14 @@ export default class FilterController {
   }
 
   _onFilterChange(filterType) {
-    switch (filterType) {
-      case FilterType.ALL:
-        this._moviesModel.setFilter(filterType);
-        this._activeFilterType = filterType;
-        break;
-      case FilterType.WATCHLIST:
-        if (this._moviesModel.getMovies(filterType).length) {
-          this._moviesModel.setFilter(filterType);
-          this._activeFilterType = filterType;
-        }
-        break;
-      case FilterType.HISTORY:
-        if (this._moviesModel.getMovies(filterType).length) {
-          this._moviesModel.setFilter(filterType);
-          this._activeFilterType = filterType;
-        }
-        break;
-      case FilterType.FAVORITES:
-        if (this._moviesModel.getMovies(filterType).length) {
-          this._moviesModel.setFilter(filterType);
-          this._activeFilterType = filterType;
-        }
-        break;
+    if (this._activeFilterType === filterType) {
+      return;
     }
+    if (filterType !== MenuItem.STATS) {
+      this._moviesModel.setFilter(filterType);
+    }
+    this._activeFilterType = filterType;
+    this._onDataChange();
 
   }
 
