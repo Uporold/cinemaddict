@@ -1,5 +1,6 @@
 import FilmDetailsPopupComponent from "../components/film-details-popup";
 import FilmCardComponent from "../components/film-card";
+import FilmCardBottom from "../components/film-card-bottom";
 import {render, replace, remove} from "../utils/render";
 import Movie from "../models/movie";
 
@@ -15,6 +16,7 @@ const Selectors = {
 export const Mode = {
   DEFAULT: `default`,
   DETAILS: `details`,
+  CLOSING: `closing`
 };
 
 export default class MovieController {
@@ -24,6 +26,7 @@ export default class MovieController {
     this._onViewChange = onViewChange;
     this._filmCardComponent = null;
     this._filmDetailsPopupComponent = null;
+    this._filmCardBottom = null;
     this._body = document.querySelector(`body`);
     this._api = api;
     this._commentsModel = commentsModel;
@@ -33,9 +36,11 @@ export default class MovieController {
   }
 
   render(movie, comments) {
-    const oldFilmCardComponent = this._filmCardComponent;
+    const oldFilmCardBottom = this._filmCardBottom;
     const oldFilmDetailsPopupComponent = this._filmDetailsPopupComponent;
     this._filmCardComponent = new FilmCardComponent(movie);
+    this._filmCardBottom = new FilmCardBottom(movie);
+    this._filmCardComponent.getElement().appendChild(this._filmCardBottom.getElement());
     this._filmDetailsPopupComponent = new FilmDetailsPopupComponent(movie, comments);
 
     this._filmCardComponent.setPopupHandler(() => {
@@ -48,15 +53,15 @@ export default class MovieController {
       document.removeEventListener(`keydown`, this._onEscKeyDown);
     });
 
-    this._filmCardComponent.setWatchlistButtonHandler((evt) => {
+    this._filmCardBottom.setWatchlistButtonHandler((evt) => {
       this._getHandlerTemplate(evt, movie, Selectors.WATCHLIST);
     });
 
-    this._filmCardComponent.setHistoryButtonHandler((evt) => {
+    this._filmCardBottom.setHistoryButtonHandler((evt) => {
       this._getHandlerTemplate(evt, movie, Selectors.HISTORY);
     });
 
-    this._filmCardComponent.setFavoriteButtonHandler((evt) => {
+    this._filmCardBottom.setFavoriteButtonHandler((evt) => {
       this._getHandlerTemplate(evt, movie, Selectors.FAVORITE);
     });
 
@@ -80,8 +85,8 @@ export default class MovieController {
       this._onCommentDataChange(movie);
     });
 
-    if (oldFilmCardComponent && oldFilmDetailsPopupComponent) {
-      replace(this._filmCardComponent, oldFilmCardComponent);
+    if (oldFilmCardBottom && oldFilmDetailsPopupComponent) {
+      replace(this._filmCardBottom, oldFilmCardBottom);
       replace(this._filmDetailsPopupComponent, oldFilmDetailsPopupComponent);
     } else {
       render(this._container, this._filmCardComponent);
@@ -109,13 +114,13 @@ export default class MovieController {
   _deleteComment(oldData, id) {
     const newMovie = Movie.clone(oldData);
     this._api.deleteComment(id)
-       .then(() => {
-         this._commentsModel.removeComment(id);
-         newMovie.commentIds = oldData.commentIds.filter((tid) => {
-           return tid !== id;
-         });
-         this._onDataChange(oldData, newMovie);
-       });
+      .then(() => {
+        this._commentsModel.removeComment(id);
+        newMovie.commentIds = oldData.commentIds.filter((tid) => {
+          return tid !== id;
+        });
+        this._onDataChange(oldData, newMovie);
+      });
   }
 
   destroy() {
@@ -154,10 +159,12 @@ export default class MovieController {
 
   _removeFilmDetails() {
     if (this._mode === Mode.DETAILS) {
+      this._mode = Mode.CLOSING;
       this._body.removeChild(this._filmDetailsPopupComponent.getElement());
       this._body.classList.toggle(`hide-overflow`);
       this._filmDetailsPopupComponent.reset();
-      this._mode = Mode.DEFAULT;
+      this._onDataChange(null, null, this._mode);
+
     }
   }
 
