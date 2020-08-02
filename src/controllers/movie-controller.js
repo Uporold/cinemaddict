@@ -1,13 +1,13 @@
 import FilmDetailsPopupComponent from "../components/film-details-popup";
+import FilmDetailsControls from "../components/film-details-controls";
+import NewCommentForm from "../components/new-comment-form";
 import FilmCardComponent from "../components/film-card";
 import FilmCardBottom from "../components/film-card-bottom";
+import FilmDetailsComments from "../components/film-details-comments";
 import {render, replace, remove} from "../utils/render";
 import Movie from "../models/movie";
 
-const SHAKE_ANIMATION_TIMEOUT = 600;
-const SHAKE_STYLE = `box-shadow: 0px 0px 15px 0px rgba(245,32,32,1);`;
-
-const Selectors = {
+const Selector = {
   WATCHLIST: `isInWatchlist`,
   HISTORY: `isInHistory`,
   FAVORITE: `isInFavorites`
@@ -27,6 +27,9 @@ export default class MovieController {
     this._filmCardComponent = null;
     this._filmDetailsPopupComponent = null;
     this._filmCardBottom = null;
+    this._filmDetailsControls = null;
+    this._filmDetailsComments = null;
+    this._filmDetailsCommentForm = null;
     this._body = document.querySelector(`body`);
     this._api = api;
     this._commentsModel = commentsModel;
@@ -36,61 +39,108 @@ export default class MovieController {
   }
 
   render(movie, comments) {
+    this._renderFilmCard(movie);
+    this._renderFilmDetails(movie, comments);
+  }
+
+  rerender(movie, comments) {
+    this._renderFilmCard(movie);
+    this._renderFilmDetailsControls(movie);
+    this._renderFilmDetailsComments(movie, comments);
+  }
+
+  _renderFilmCard(movie) {
     const oldFilmCardBottom = this._filmCardBottom;
-    const oldFilmDetailsPopupComponent = this._filmDetailsPopupComponent;
     this._filmCardComponent = new FilmCardComponent(movie);
     this._filmCardBottom = new FilmCardBottom(movie);
     this._filmCardComponent.getElement().appendChild(this._filmCardBottom.getElement());
-    this._filmDetailsPopupComponent = new FilmDetailsPopupComponent(movie, comments);
 
     this._filmCardComponent.setPopupHandler(() => {
       this._showFilmDetails();
       document.addEventListener(`keydown`, this._onEscKeyDown);
     });
 
+    this._filmCardBottom.setWatchlistButtonHandler((evt) => {
+      this._getHandlerTemplate(evt, movie, Selector.WATCHLIST, Mode.DEFAULT);
+    });
+
+    this._filmCardBottom.setHistoryButtonHandler((evt) => {
+      this._getHandlerTemplate(evt, movie, Selector.HISTORY, Mode.DEFAULT);
+    });
+
+    this._filmCardBottom.setFavoriteButtonHandler((evt) => {
+      this._getHandlerTemplate(evt, movie, Selector.FAVORITE, Mode.DEFAULT);
+    });
+
+    if (oldFilmCardBottom) {
+      replace(this._filmCardBottom, oldFilmCardBottom);
+    } else {
+      render(this._container, this._filmCardComponent);
+    }
+  }
+  _renderFilmDetails(movie, comments) {
+    const oldFilmDetailsPopupComponent = this._filmDetailsPopupComponent;
+    this._filmDetailsPopupComponent = new FilmDetailsPopupComponent(movie);
     this._filmDetailsPopupComponent.setClosePopupHandler(() => {
       this._removeFilmDetails();
       document.removeEventListener(`keydown`, this._onEscKeyDown);
     });
+    this._renderFilmDetailsControls(movie);
+    this._renderFilmDetailsComments(movie, comments);
+    this._renderFilmDetailsNewCommentForm(movie);
+    if (oldFilmDetailsPopupComponent) {
+      replace(this._filmDetailsPopupComponent, oldFilmDetailsPopupComponent);
+    }
 
-    this._filmCardBottom.setWatchlistButtonHandler((evt) => {
-      this._getHandlerTemplate(evt, movie, Selectors.WATCHLIST);
+  }
+  _renderFilmDetailsControls(movie) {
+    const oldFilmDetailsControls = this._filmDetailsControls;
+    this._filmDetailsControls = new FilmDetailsControls(movie);
+    this._filmDetailsPopupComponent.getElement().querySelector(`.form-details__top-container`).appendChild(this._filmDetailsControls.getElement());
+
+    this._filmDetailsControls.setWatchlistButtonHandler((evt) => {
+      this._getHandlerTemplate(evt, movie, Selector.WATCHLIST);
     });
 
-    this._filmCardBottom.setHistoryButtonHandler((evt) => {
-      this._getHandlerTemplate(evt, movie, Selectors.HISTORY);
+    this._filmDetailsControls.setHistoryButtonHandler((evt) => {
+      this._getHandlerTemplate(evt, movie, Selector.HISTORY);
     });
 
-    this._filmCardBottom.setFavoriteButtonHandler((evt) => {
-      this._getHandlerTemplate(evt, movie, Selectors.FAVORITE);
+    this._filmDetailsControls.setFavoriteButtonHandler((evt) => {
+      this._getHandlerTemplate(evt, movie, Selector.FAVORITE);
     });
 
-    this._filmDetailsPopupComponent.setWatchlistButtonHandler((evt) => {
-      this._getHandlerTemplate(evt, movie, Selectors.WATCHLIST);
-    });
+    if (oldFilmDetailsControls) {
+      replace(this._filmDetailsControls, oldFilmDetailsControls);
+    }
+  }
+  _renderFilmDetailsComments(movie, comments) {
+    const oldFilmDetailsComments = this._filmDetailsComments;
+    this._filmDetailsComments = new FilmDetailsComments(movie, comments);
+    this._filmDetailsPopupComponent.getElement().querySelector(`.form-details__bottom-container`).appendChild(this._filmDetailsComments.getElement());
 
-    this._filmDetailsPopupComponent.setHistoryButtonHandler((evt) => {
-      this._getHandlerTemplate(evt, movie, Selectors.HISTORY);
-    });
-
-    this._filmDetailsPopupComponent.setFavoriteButtonHandler((evt) => {
-      this._getHandlerTemplate(evt, movie, Selectors.FAVORITE);
-    });
-
-    this._filmDetailsPopupComponent.setCommentDeleteButtonClickHandler((id) => {
+    this._filmDetailsComments.setCommentDeleteButtonClickHandler((id) => {
       this._onCommentDataChange(movie, id);
     });
 
-    this._filmDetailsPopupComponent.setAddNewCommentHandler(() => {
-      this._onCommentDataChange(movie);
-    });
-
-    if (oldFilmCardBottom && oldFilmDetailsPopupComponent) {
-      replace(this._filmCardBottom, oldFilmCardBottom);
-      replace(this._filmDetailsPopupComponent, oldFilmDetailsPopupComponent);
-    } else {
-      render(this._container, this._filmCardComponent);
+    if (oldFilmDetailsComments) {
+      replace(this._filmDetailsComments, oldFilmDetailsComments);
     }
+
+  }
+  _renderFilmDetailsNewCommentForm(movie) {
+    const oldFilmDetailsCommentForm = this._filmDetailsCommentForm;
+    this._filmDetailsCommentForm = new NewCommentForm();
+    this._filmDetailsPopupComponent.getElement().querySelector(`.form-details__bottom-container`).appendChild(this._filmDetailsCommentForm.getElement());
+    this._filmDetailsCommentForm.setAddNewCommentHandler((evt) => {
+      if (evt.code === `Enter` && (evt.ctrlKey || evt.metaKey)) {
+        this._onCommentDataChange(movie);
+      }
+    });
+    if (oldFilmDetailsCommentForm) {
+      replace(this._filmDetailsCommentForm, oldFilmDetailsCommentForm);
+    }
+
   }
 
   _onCommentDataChange(oldData, id = false) {
@@ -99,16 +149,16 @@ export default class MovieController {
 
 
   _placeComment(oldData) {
-    const comment = this._filmDetailsPopupComponent.getNewComment();
-    if (comment) {
-      this._api.createComment(oldData.id, comment)
+    const comment = this._filmDetailsCommentForm.getNewComment();
+    this._api.createComment(oldData.id, comment)
         .then(({newMovie, newComments}) => {
           this._commentsModel.addComment(newComments[newComments.length - 1]);
           this._onDataChange(oldData, newMovie);
+          this._filmDetailsCommentForm.reset();
+        })
+        .catch(() => {
+          this._filmDetailsCommentForm.shake();
         });
-    } else {
-      this.shake();
-    }
   }
 
   _deleteComment(oldData, id) {
@@ -120,6 +170,9 @@ export default class MovieController {
           return tid !== id;
         });
         this._onDataChange(oldData, newMovie);
+      })
+      .catch(() => {
+        this._filmDetailsComments.shake(id);
       });
   }
 
@@ -129,20 +182,11 @@ export default class MovieController {
     document.removeEventListener(`keydown`, this._onEscKeyDown);
   }
 
-  shake() {
-    this._filmDetailsPopupComponent.getElement().querySelector(`.film-details__comment-label`).style = SHAKE_STYLE;
-    this._filmDetailsPopupComponent.getElement().querySelector(`.film-details__comment-label`).style.animation = `shake ${SHAKE_ANIMATION_TIMEOUT / 1000}s`;
-    setTimeout(() => {
-      this._filmDetailsPopupComponent.getElement().querySelector(`.film-details__comment-label`).style = ``;
-      this._filmDetailsPopupComponent.getElement().querySelector(`.film-details__comment-label`).style.animation = ``;
-    }, SHAKE_ANIMATION_TIMEOUT);
-  }
-
   _getHandlerTemplate(evt, movie, data, mode) {
     evt.preventDefault();
     const newData = Movie.clone(movie);
     newData[data] = !movie[data];
-    if (data === Selectors.HISTORY && newData[data] === false) {
+    if (data === Selector.HISTORY && newData[data] === false) {
       newData.watchingDate = null;
     } else {
       newData.watchingDate = new Date();
@@ -160,9 +204,14 @@ export default class MovieController {
   _removeFilmDetails() {
     if (this._mode === Mode.DETAILS) {
       this._mode = Mode.CLOSING;
+      // this._filmDetailsPopupComponent.getElement().querySelector(`.form-details__top-container`).removeChild(this._filmDetailsControls.getElement());
+      // console.log(this._filmDetailsPopupComponent.getTemplate());
+      // this._filmDetailsPopupComponent.getTemplate().classList.add(`test`);
+      // this._body.removeChild(this._filmDetailsPopupComponent.getElement());
+      // this._body.removeChild(this._body.lastChild);
       this._body.removeChild(this._filmDetailsPopupComponent.getElement());
       this._body.classList.toggle(`hide-overflow`);
-      this._filmDetailsPopupComponent.reset();
+      this._filmDetailsCommentForm.reset();
       this._onDataChange(null, null, this._mode);
 
     }

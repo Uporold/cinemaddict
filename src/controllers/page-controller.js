@@ -210,8 +210,11 @@ export default class PageController {
         const isSuccess = this._moviesModel.updateMovie(oldData.id, movie);
         if (isSuccess) {
           movieControllers.forEach((movieController) => {
-            movieController.render(movie, getMovieComments(movie, this._commentsModel.getComments()));
+            movieController.rerender(movie, getMovieComments(movie, this._commentsModel.getComments()));
           });
+          if (mode === Mode.DEFAULT) {
+            this._updateMovies();
+          }
         }
       });
   }

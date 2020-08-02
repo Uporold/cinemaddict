@@ -14,7 +14,7 @@ export const getFilteredStatisticMovies = (movies, filterType) => {
   return movies.filter((movie) => {
     const dueDate = moment(movie.watchingDate);
 
-    if (!dueDate) {
+    if (!dueDate || !movie.isInHistory) {
       return false;
     }
 

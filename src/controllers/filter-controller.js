@@ -19,7 +19,6 @@ export default class FilterController {
 
   render() {
     const movies = this._moviesModel.getMoviesAll();
-
     const oldComponent = this._filterComponent;
 
     this._filterComponent = new MainMenu(movies);

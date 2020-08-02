@@ -1,10 +1,23 @@
 import AbstractSmartComponent from "./abstract-smart-component";
+import {SHAKE_OPTION} from "../utils/const";
 
-const createNewComment = (emoji, comment) => {
+const emojis = [`smile`, `sleeping`, `puke`, `angry`];
+
+const createEmojiMarkup = (emojiName, emoji) => {
+  return (
+    `<input class="film-details__emoji-item visually-hidden" name="comment-emoji" type="radio" id="emoji-${emojiName}" value="${emojiName}" ${emoji === emojiName ? `checked` : ``}>
+       <label class="film-details__emoji-label" for="emoji-${emojiName}">
+         <img src="./images/emoji/${emojiName}.png" width="30" height="30" alt="emoji">
+       </label>`
+  );
+};
+
+const createNewComment = (chosenEmoji, comment) => {
+  const emojisMarkup = emojis.map((emoji) => createEmojiMarkup(emoji, chosenEmoji)).join(`\n`);
   return (
     `<div class="film-details__new-comment">
           <div class="film-details__add-emoji-label">
-           ${emoji ? `<img src="images/emoji/${emoji}.png" width="55" height="55" alt="emoji-${emoji}">` : ``}
+           ${chosenEmoji ? `<img src="images/emoji/${chosenEmoji}.png" width="55" height="55" alt="emoji-${chosenEmoji}">` : ``}
           </div>
 
           <label class="film-details__comment-label">
@@ -12,36 +25,19 @@ const createNewComment = (emoji, comment) => {
           </label>
 
           <div class="film-details__emoji-list">
-            <input class="film-details__emoji-item visually-hidden" name="comment-emoji" type="radio" id="emoji-smile" value="smile" ${emoji === `smile` ? `checked` : ``}>
-            <label class="film-details__emoji-label" for="emoji-smile">
-              <img src="./images/emoji/smile.png" width="30" height="30" alt="emoji">
-            </label>
-
-            <input class="film-details__emoji-item visually-hidden" name="comment-emoji" type="radio" id="emoji-sleeping" value="sleeping" ${emoji === `sleeping` ? `checked` : ``}>
-            <label class="film-details__emoji-label" for="emoji-sleeping">
-              <img src="./images/emoji/sleeping.png" width="30" height="30" alt="emoji">
-            </label>
-
-            <input class="film-details__emoji-item visually-hidden" name="comment-emoji" type="radio" id="emoji-puke" value="puke" ${emoji === `puke` ? `checked` : ``}>
-            <label class="film-details__emoji-label" for="emoji-puke">
-              <img src="./images/emoji/puke.png" width="30" height="30" alt="emoji">
-            </label>
-
-            <input class="film-details__emoji-item visually-hidden" name="comment-emoji" type="radio" id="emoji-angry" value="angry" ${emoji === `angry` ? `checked` : ``}>
-            <label class="film-details__emoji-label" for="emoji-angry">
-              <img src="./images/emoji/angry.png" width="30" height="30" alt="emoji">
-            </label>
+            ${emojisMarkup}
           </div>
         </div>`
   );
 };
 
-
-export default class NewComment extends AbstractSmartComponent {
+export default class NewCommentForm extends AbstractSmartComponent {
   constructor() {
     super();
     this._emoji = null;
     this._comment = null;
+
+    this._addNewCommentHandler = null;
 
     this._subscribeOnEvents();
   }
@@ -67,12 +63,19 @@ export default class NewComment extends AbstractSmartComponent {
     });
   }
 
+  setAddNewCommentHandler(handler) {
+    this.getElement().querySelector(`.film-details__comment-label`).addEventListener(`keydown`, handler);
+    this._addNewCommentHandler = (evt) => handler(evt);
+  }
+
+
   rerender() {
     super.rerender();
   }
 
   recoveryListeners() {
     this._subscribeOnEvents();
+    this.setAddNewCommentHandler(this._addNewCommentHandler);
   }
 
   getNewComment() {
@@ -96,4 +99,13 @@ export default class NewComment extends AbstractSmartComponent {
     this.rerender();
   }
 
+  shake() {
+    const element = this.getElement();
+    element.querySelector(`.film-details__comment-label`).style = SHAKE_OPTION.SHAKE_STYLE;
+    element.querySelector(`.film-details__comment-label`).style.animation = `shake ${SHAKE_OPTION.SHAKE_ANIMATION_TIMEOUT / 1000}s`;
+    setTimeout(() => {
+      element.querySelector(`.film-details__comment-label`).style = ``;
+      element.querySelector(`.film-details__comment-label`).style.animation = ``;
+    }, SHAKE_OPTION.SHAKE_ANIMATION_TIMEOUT);
+  }
 }
