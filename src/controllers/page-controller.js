@@ -197,7 +197,7 @@ export default class PageController {
     this._renderLoadMoreButton();
   }
 
-  _onDataChange(oldData, newData, mode = null) {
+  _onDataChange(oldData, newData, mode = null, filter = null) {
     if (mode === Mode.CLOSING) {
       this._updateMovies();
       return;
@@ -212,7 +212,7 @@ export default class PageController {
           movieControllers.forEach((movieController) => {
             movieController.rerender(movie, getMovieComments(movie, this._commentsModel.getComments()));
           });
-          if (mode === Mode.DEFAULT) {
+          if (mode === Mode.DEFAULT && this._moviesModel.getActiveFilter() === filter) {
             this._updateMovies();
           }
         }

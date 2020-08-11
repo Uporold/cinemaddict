@@ -56,4 +56,3 @@ api.getMovies()
         pageController.render();
       });
   });
-

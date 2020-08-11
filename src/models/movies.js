@@ -23,6 +23,10 @@ export default class MoviesModel {
     return getMoviesByFilter(this._movies, this._activeFilterType);
   }
 
+  getActiveFilter() {
+    return this._activeFilterType;
+  }
+
   updateMovie(id, movie) {
     const index = this._movies.findIndex((it) => it.id === id);
 
